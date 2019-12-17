@@ -92,6 +92,7 @@ class _StockInventoryLineListViewState
     getStockInventoryLineState() async {
       final result = await getSetBarcodeViewState(
           serverProvider: serverProvider, stockInventoryId: widget.inventoryId);
+      stockInvState.stockInventoryLineState = result;
       final barcodes = await getAllBarcodes(serverProvider);
       stockInvState.allProductsBarcodes = barcodes;
       print({'barcodes', stockInvState.allProductsBarcodes});
@@ -152,9 +153,40 @@ class _StockInventoryLineListViewState
             focusNode: myFocusNode,
             autofocus: true,
             onChanged: (e) {
+              dynamic product;
               final barcodes = stockInvState.allProductsBarcodes;
+              final state = stockInvState.stockInventoryLineState;
+              int locationId;
+              double qty;
+              dynamic lineId;
+              for (var item in state[0]['line_ids']) {
+                if (item['product_id']['barcode'] == e) {
+                  lineId = item;
+                }
+              }
+
+              qty = lineId['product_qty'];
+              locationId = lineId['location_id'][0];
+
               barcodes.forEach((f) {
                 print(f[e]);
+                if (f[e]['barcode'] == e) {
+                  product = f[e];
+                  print({
+                    'location_id': locationId,
+                    'package_id': false,
+                    'prod_lot_id': false,
+                    'product_id': product['id'],
+                    'product_qty': qty + 1
+                  });
+                  // serverProvider.client.create('stock.inventory.line', {
+                  //   'location_id': 8,
+                  //   'package_id': false,
+                  //   'prod_lot_id': false,
+                  //   'product_id': product['id'],
+                  //   'product_qty': qty + 1
+                  // });
+                }
               });
             },
             onSubmitted: (e) {},
@@ -175,7 +207,7 @@ class _StockInventoryLineListViewState
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Icon(Icons.add),
-                Text('AGREGAR PRODUCTO',
+                Text('AÑADIR PRODUCTO',
                     style: TextStyle(fontWeight: FontWeight.w800))
               ],
             ),
