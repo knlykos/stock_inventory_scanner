@@ -159,17 +159,22 @@ class _StockInventoryLineListViewState
               int locationId;
               double qty;
               dynamic lineId;
-              for (var item in state[0]['line_ids']) {
-                if (item['product_id']['barcode'] == e) {
-                  lineId = item;
+              if (state[0]['line_ids'].length != 0) {
+                for (var item in state[0]['line_ids']) {
+                  if (item['product_id']['barcode'] == e) {
+                    lineId = item;
+                  }
                 }
+
+                qty = lineId['product_qty'] + 1;
+                locationId = lineId['location_id'][0];
+              } else {
+                qty = 1;
+                locationId = state[0]['location_ids'][0];
               }
 
-              qty = lineId['product_qty'];
-              locationId = lineId['location_id'][0];
-
               barcodes.forEach((f) {
-                print(f[e]);
+                print(f);
                 if (f[e]['barcode'] == e) {
                   product = f[e];
                   print({
@@ -177,7 +182,7 @@ class _StockInventoryLineListViewState
                     'package_id': false,
                     'prod_lot_id': false,
                     'product_id': product['id'],
-                    'product_qty': qty + 1
+                    'product_qty': qty
                   });
                   // serverProvider.client.create('stock.inventory.line', {
                   //   'location_id': 8,
