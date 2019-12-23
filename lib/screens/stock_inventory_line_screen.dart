@@ -65,6 +65,17 @@ class _StockInventoryLineListViewState
     }
   }
 
+  String numberValidator(String value) {
+    if (value == null) {
+      return null;
+    }
+    final n = num.tryParse(value);
+    if (n == null) {
+      return '"$value" is not a valid number';
+    }
+    return null;
+  }
+
   @override
   void initState() {
     myFocusNode = FocusNode();
@@ -152,13 +163,19 @@ class _StockInventoryLineListViewState
             style: TextStyle(fontSize: 15, height: 1),
             focusNode: myFocusNode,
             autofocus: true,
-            onChanged: (e) {
+            onSubmitted: (e) {
               dynamic product;
               final barcodes = stockInvState.allProductsBarcodes;
               final state = stockInvState.stockInventoryLineState;
+              final inventoryId = state[0]['id'];
+              final locationStockId = state[0]['id'];
+              final model = 'stock.inventory.line';
+              final sessionData = serverProvider.authValues;
               int locationId;
               double qty;
               dynamic lineId;
+              dynamic args;
+              dynamic kargsParams;
               if (state[0]['line_ids'].length != 0) {
                 for (var item in state[0]['line_ids']) {
                   if (item['product_id']['barcode'] == e) {
@@ -173,28 +190,59 @@ class _StockInventoryLineListViewState
                 locationId = state[0]['location_ids'][0];
               }
 
-              barcodes.forEach((f) {
-                print(f);
-                if (f[e]['barcode'] == e) {
-                  product = f[e];
-                  print({
-                    'location_id': locationId,
-                    'package_id': false,
-                    'prod_lot_id': false,
-                    'product_id': product['id'],
-                    'product_qty': qty
-                  });
-                  // serverProvider.client.create('stock.inventory.line', {
-                  //   'location_id': 8,
-                  //   'package_id': false,
-                  //   'prod_lot_id': false,
-                  //   'product_id': product['id'],
-                  //   'product_qty': qty + 1
-                  // });
+              barcodes.asMap().forEach((i, f) {
+                try {
+                  if (f[e] != null) {
+                    product = f[e];
+                    args = {
+                      'location_id': locationId,
+                      'package_id': false,
+                      'prod_lot_id': false,
+                      'product_id': product['id'],
+                      'product_qty': 1
+                    };
+
+                    kargsParams = {
+                      'context': {
+                        'lang': 'es_ES',
+                        'tz': false,
+                        'uid': 2,
+                        'allowed_company_ids': [sessionData['company_id']],
+                        'default_company_id': sessionData['company_id'],
+                        'default_inventory_id': inventoryId,
+                        'default_location_id': locationStockId,
+                        'default_product_qty': 1,
+                        'form_view_ref':
+                            'stock_barcode.stock_inventory_line_barcode'
+                      }
+                    };
+                  }
+                } catch (e) {
+                  print('El valor es null');
                 }
+                // if (f[i][e]['barcode'] == e) {
+                //   product = f[e];
+                //   print({
+                //     'location_id': locationId,
+                //     'package_id': false,
+                //     'prod_lot_id': false,
+                //     'product_id': product['id'],
+                //     'product_qty': qty
+                //   });
+
+                serverProvider.client
+                    .callKW(model, "create", [args], kwargs: kargsParams);
+                // serverProvider.client.create('stock.inventory.line', {
+                //   'location_id': 8,
+                //   'package_id': false,
+                //   'prod_lot_id': false,
+                //   'product_id': product['id'],
+                //   'product_qty': qty + 1
+                // });
+                // }
               });
             },
-            onSubmitted: (e) {},
+            // onSubmitted: (e) {},
           ),
         ),
         Flexible(

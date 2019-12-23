@@ -160,3 +160,18 @@ nameSearch(e, context1) async {
   //     .callKW(model, method, args, kwargs: kwargs);
   // print({'data', data.getResult()});
 }
+
+
+  // "context": {
+  //               "lang": "es_ES",
+  //               "tz": false,
+  //               "uid": 2,
+  //               "allowed_company_ids": [
+  //                   1
+  //               ],
+  //               "default_company_id": 1,
+  //               "default_inventory_id": 23,
+  //               "default_location_id": 8,
+  //               "default_product_qty": 1,
+  //               "form_view_ref": "stock_barcode.stock_inventory_line_barcode"
+  //           }

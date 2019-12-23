@@ -37,7 +37,6 @@ class _LoginScreenState extends State<LoginScreen> {
     void getDatabaseList() async {
       serverProvider.getInstance(host: odooUrl.text);
       var dbs = await serverProvider.getDatabases();
-
       print(dbs);
       setState(() {
         this.odooDBList = dbs;
@@ -54,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
           host: odooUrl.text);
 
       final auth = await serverProvider.authentication();
-
+      print(auth);
       return auth;
     }
 

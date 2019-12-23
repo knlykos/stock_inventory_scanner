@@ -10,6 +10,7 @@ class ServerProvider with ChangeNotifier {
   bool _isAuth;
   bool _debug = true;
   OdooClient _client;
+  dynamic authValues;
 
   getInstance({String user, String password, String database, String host}) {
     print({user, password, database, host});
@@ -20,7 +21,8 @@ class ServerProvider with ChangeNotifier {
     this._client = new OdooClient(this._host);
   }
 
-  OdooClient get  client  {
+  OdooClient get client {
+    _client.debugRPC(true);
     return _client;
   }
 
@@ -36,6 +38,7 @@ class ServerProvider with ChangeNotifier {
         ._client
         .authenticate(this._user, this._password, this._database);
     this._isAuth = auth.isSuccess;
+    this.authValues = auth.getUser();
     if (this._isAuth == true) {
       this._sessionId = auth.getSessionId();
       this._client.setSessionId(this._sessionId);
