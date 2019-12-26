@@ -164,11 +164,12 @@ class _StockInventoryLineListViewState
             focusNode: myFocusNode,
             autofocus: true,
             onSubmitted: (e) {
+              print(e);
               dynamic product;
               final barcodes = stockInvState.allProductsBarcodes;
               final state = stockInvState.stockInventoryLineState;
               final inventoryId = state[0]['id'];
-              final locationStockId = state[0]['id'];
+              final locationStockId = state[0]['location_ids'][0];
               final model = 'stock.inventory.line';
               final sessionData = serverProvider.authValues;
               int locationId;
@@ -189,6 +190,19 @@ class _StockInventoryLineListViewState
                 qty = 1;
                 locationId = state[0]['location_ids'][0];
               }
+              kargsParams = {
+                'context': {
+                  'lang': 'es_ES',
+                  'tz': false,
+                  'uid': 2,
+                  'allowed_company_ids': [sessionData.companyId],
+                  'default_company_id': sessionData.companyId,
+                  'default_inventory_id': inventoryId,
+                  'default_location_id': locationStockId,
+                  'default_product_qty': 1,
+                  'form_view_ref': 'stock_barcode.stock_inventory_line_barcode'
+                }
+              };
 
               barcodes.asMap().forEach((i, f) {
                 try {
@@ -200,21 +214,6 @@ class _StockInventoryLineListViewState
                       'prod_lot_id': false,
                       'product_id': product['id'],
                       'product_qty': 1
-                    };
-
-                    kargsParams = {
-                      'context': {
-                        'lang': 'es_ES',
-                        'tz': false,
-                        'uid': 2,
-                        'allowed_company_ids': [sessionData['company_id']],
-                        'default_company_id': sessionData['company_id'],
-                        'default_inventory_id': inventoryId,
-                        'default_location_id': locationStockId,
-                        'default_product_qty': 1,
-                        'form_view_ref':
-                            'stock_barcode.stock_inventory_line_barcode'
-                      }
                     };
                   }
                 } catch (e) {
@@ -229,7 +228,7 @@ class _StockInventoryLineListViewState
                 //     'product_id': product['id'],
                 //     'product_qty': qty
                 //   });
-
+                print(kargsParams);
                 serverProvider.client
                     .callKW(model, "create", [args], kwargs: kargsParams);
                 // serverProvider.client.create('stock.inventory.line', {

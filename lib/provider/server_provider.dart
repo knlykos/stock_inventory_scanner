@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:odoo_api/odoo_api.dart';
+import 'package:odoo_api/odoo_user_response.dart';
 
 class ServerProvider with ChangeNotifier {
   String _host;
@@ -10,7 +11,7 @@ class ServerProvider with ChangeNotifier {
   bool _isAuth;
   bool _debug = true;
   OdooClient _client;
-  dynamic authValues;
+  OdooUser authValues;
 
   getInstance({String user, String password, String database, String host}) {
     print({user, password, database, host});
