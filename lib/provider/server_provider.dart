@@ -44,7 +44,10 @@ class ServerProvider with ChangeNotifier {
       this._sessionId = auth.getSessionId();
       this._client.setSessionId(this._sessionId);
     }
-
     return this._isAuth;
+  }
+
+  update() {
+    notifyListeners();
   }
 }

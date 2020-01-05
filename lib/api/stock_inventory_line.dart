@@ -1,4 +1,96 @@
+import 'package:odoo_api/odoo_api_connector.dart';
 import 'package:stock_inventory_scanner/provider/server_provider.dart';
+import 'package:stock_inventory_scanner/provider/stock_inventory_line_state.dart';
+
+// TODO: convertir en clase y hacer enumeraciones llamada method, y color create, update, delete de odoo;
+Future<OdooResponse> setNewStockInventoryLine(
+    dynamic e,
+    StockInventoryLineState stockInvState,
+    ServerProvider serverProvider) async {
+  print({'e', e});
+  dynamic product;
+  final barcodes = stockInvState.allProductsBarcodes;
+  final state = stockInvState.stockInventoryLineState;
+  final inventoryId = state[0]['id'];
+  final locationStockId = state[0]['location_ids'][0];
+  final model = 'stock.inventory.line';
+  final sessionData = serverProvider.authValues;
+  var productExistInList = false;
+  String method;
+  int locationId;
+  double qty;
+  dynamic lineId;
+  dynamic args;
+  dynamic kargsParams;
+  Future<OdooResponse> response;
+  if (state[0]['line_ids'].length != 0) {
+    for (var item in state[0]['line_ids']) {
+      if (item['product_id']['barcode'] == e) {
+        productExistInList = true;
+        method = 'write';
+        lineId = item["id"];
+        qty = item['product_qty'] + 1;
+      }
+      if (productExistInList != true) {
+        method = 'create';
+        qty = 1;
+        locationId = state[0]['location_ids'][0];
+      }
+    }
+  } else {
+    method = 'create';
+    qty = 1;
+    locationId = state[0]['location_ids'][0];
+  }
+  kargsParams = {
+    'context': {
+      'lang': 'es_ES',
+      'tz': false,
+      'uid': 2,
+      'allowed_company_ids': [sessionData.companyId],
+      'default_company_id': sessionData.companyId,
+      'default_inventory_id': inventoryId,
+      'default_location_id': locationStockId,
+      'default_product_qty': 1,
+      'form_view_ref': 'stock_barcode.stock_inventory_line_barcode'
+    }
+  };
+
+  switch (method) {
+    case 'create':
+      barcodes.asMap().forEach((i, f) {
+        try {
+          if (f[e] != null) {
+            product = f[e];
+            args = {
+              'location_id': locationId,
+              'package_id': false,
+              'prod_lot_id': false,
+              'product_id': product['id'],
+              'product_qty': qty
+            };
+          }
+        } catch (e) {
+          print('El valor es null');
+        }
+        response = serverProvider.client
+            .callKW(model, method, [args], kwargs: kargsParams);
+      });
+      break;
+    case 'write':
+      args = [
+        [lineId],
+        {'product_qty': qty}
+      ];
+      response = serverProvider.client
+          .callKW(model, method, args, kwargs: kargsParams);
+      break;
+  }
+
+  return response;
+}
+
+productExist() {}
 
 Future<List<dynamic>> getSetBarcodeViewState(
     {ServerProvider serverProvider, int stockInventoryId}) async {
@@ -161,17 +253,16 @@ nameSearch(e, context1) async {
   // print({'data', data.getResult()});
 }
 
-
-  // "context": {
-  //               "lang": "es_ES",
-  //               "tz": false,
-  //               "uid": 2,
-  //               "allowed_company_ids": [
-  //                   1
-  //               ],
-  //               "default_company_id": 1,
-  //               "default_inventory_id": 23,
-  //               "default_location_id": 8,
-  //               "default_product_qty": 1,
-  //               "form_view_ref": "stock_barcode.stock_inventory_line_barcode"
-  //           }
+// "context": {
+//               "lang": "es_ES",
+//               "tz": false,
+//               "uid": 2,
+//               "allowed_company_ids": [
+//                   1
+//               ],
+//               "default_company_id": 1,
+//               "default_inventory_id": 23,
+//               "default_location_id": 8,
+//               "default_product_qty": 1,
+//               "form_view_ref": "stock_barcode.stock_inventory_line_barcode"
+//           }

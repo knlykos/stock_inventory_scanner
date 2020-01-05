@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -115,14 +116,11 @@ class _StockInventoryLineListViewState
 
     productList ??= getStockInventoryLineState();
     var futureBuilder = FutureBuilder(
-        future: productList,
+        future: getStockInventoryLineState(),
         builder: (context, AsyncSnapshot<dynamic> snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             final records = snapshot.data[0]['line_ids'];
             final length = snapshot.data[0]['line_ids'].length;
-            print(snapshot.data[0]['line_ids']);
-            print(json.encode(snapshot.data));
-            print(length);
             return ListView.builder(
               itemCount: length,
               itemBuilder: (context, index) {
@@ -131,17 +129,7 @@ class _StockInventoryLineListViewState
                   subtitle: Text(
                       'Cantidad ${records[index]['product_qty'].toString()}'),
                   trailing: Icon(Icons.edit),
-                  onTap: () {
-//                    Navigator.push(
-//                        context,
-//                        MaterialPageRoute(
-//                            builder: (context) => UpdateProductScreen(
-//                              stockInventoryId: widget.stockInventoryId,
-//                              stockInventoryLine: records[index],
-//                              // title: records[index]['product'][0]
-//                              //     ['display_name'],
-//                            )));
-                  },
+                  onTap: () {},
                 );
               },
             );
@@ -163,83 +151,16 @@ class _StockInventoryLineListViewState
             style: TextStyle(fontSize: 15, height: 1),
             focusNode: myFocusNode,
             autofocus: true,
-            onSubmitted: (e) {
-              print(e);
-              dynamic product;
-              final barcodes = stockInvState.allProductsBarcodes;
-              final state = stockInvState.stockInventoryLineState;
-              final inventoryId = state[0]['id'];
-              final locationStockId = state[0]['location_ids'][0];
-              final model = 'stock.inventory.line';
-              final sessionData = serverProvider.authValues;
-              int locationId;
-              double qty;
-              dynamic lineId;
-              dynamic args;
-              dynamic kargsParams;
-              if (state[0]['line_ids'].length != 0) {
-                for (var item in state[0]['line_ids']) {
-                  if (item['product_id']['barcode'] == e) {
-                    lineId = item;
-                  }
-                }
-
-                qty = lineId['product_qty'] + 1;
-                locationId = lineId['location_id'][0];
-              } else {
-                qty = 1;
-                locationId = state[0]['location_ids'][0];
+            onSubmitted: (e) async {
+              final sum = 0;
+              print({'sum', sum});
+              var changes = await setNewStockInventoryLine(
+                  e, stockInvState, serverProvider);
+              // print({'dataaaaaaaaaaaaaaaaaaaaaaa', data.getError()});
+              if (changes.hasError() == false) {
+                await getStockInventoryLineState();
+                serverProvider.update();
               }
-              kargsParams = {
-                'context': {
-                  'lang': 'es_ES',
-                  'tz': false,
-                  'uid': 2,
-                  'allowed_company_ids': [sessionData.companyId],
-                  'default_company_id': sessionData.companyId,
-                  'default_inventory_id': inventoryId,
-                  'default_location_id': locationStockId,
-                  'default_product_qty': 1,
-                  'form_view_ref': 'stock_barcode.stock_inventory_line_barcode'
-                }
-              };
-
-              barcodes.asMap().forEach((i, f) {
-                try {
-                  if (f[e] != null) {
-                    product = f[e];
-                    args = {
-                      'location_id': locationId,
-                      'package_id': false,
-                      'prod_lot_id': false,
-                      'product_id': product['id'],
-                      'product_qty': 1
-                    };
-                  }
-                } catch (e) {
-                  print('El valor es null');
-                }
-                // if (f[i][e]['barcode'] == e) {
-                //   product = f[e];
-                //   print({
-                //     'location_id': locationId,
-                //     'package_id': false,
-                //     'prod_lot_id': false,
-                //     'product_id': product['id'],
-                //     'product_qty': qty
-                //   });
-                print(kargsParams);
-                serverProvider.client
-                    .callKW(model, "create", [args], kwargs: kargsParams);
-                // serverProvider.client.create('stock.inventory.line', {
-                //   'location_id': 8,
-                //   'package_id': false,
-                //   'prod_lot_id': false,
-                //   'product_id': product['id'],
-                //   'product_qty': qty + 1
-                // });
-                // }
-              });
             },
             // onSubmitted: (e) {},
           ),

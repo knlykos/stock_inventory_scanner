@@ -35,12 +35,17 @@ class _LoginScreenState extends State<LoginScreen> {
         ));
 
     void getDatabaseList() async {
+      try {
       serverProvider.getInstance(host: odooUrl.text);
       var dbs = await serverProvider.getDatabases();
       print(dbs);
       setState(() {
         this.odooDBList = dbs;
-      });
+      });  
+      } catch (e) {
+        print(e);
+      }
+      
     }
 
     // final GlobalKey<ScaffoldState> _scaffoldKey =
