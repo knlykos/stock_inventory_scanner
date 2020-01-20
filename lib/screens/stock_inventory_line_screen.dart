@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:stock_inventory_scanner/api/stock_inventory_line.dart';
 import 'package:stock_inventory_scanner/provider/server_provider.dart';
 import 'package:stock_inventory_scanner/provider/stock_inventory_line_state.dart';
-//import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 
 class StockInventoryLineScreen extends StatelessWidget {
   int stockInventoryId;
@@ -20,16 +20,7 @@ class StockInventoryLineScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Inventario'),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.add_to_photos),
-            onPressed: () async {
-//              final barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-//                  "#ff6666", "Cancel", true, ScanMode.BARCODE);
-//              print(barcodeScanRes);
-            },
-          )
-        ],
+        actions: <Widget>[],
       ),
       body: StockInventoryLineListView(
         inventoryId: inventoryId,
@@ -101,22 +92,14 @@ class _StockInventoryLineListViewState
     final serverProvider = Provider.of<ServerProvider>(context);
     final stockInvState = Provider.of<StockInventoryLineState>(context);
 
-    getStockInventoryLineState() async {
-      final result = await getSetBarcodeViewState(
-          serverProvider: serverProvider, stockInventoryId: widget.inventoryId);
-      stockInvState.stockInventoryLineState = result;
-      final barcodes = await getAllBarcodes(serverProvider);
-      stockInvState.allProductsBarcodes = barcodes;
-      print({'barcodes', stockInvState.allProductsBarcodes});
-      return result;
-    }
-
-    getStockInventoryLineState();
+    getStockInventoryLineState(stockInvState, serverProvider, widget);
     // return Container();
 
-    productList ??= getStockInventoryLineState();
+    productList ??=
+        getStockInventoryLineState(stockInvState, serverProvider, widget);
     var futureBuilder = FutureBuilder(
-        future: getStockInventoryLineState(),
+        future:
+            getStockInventoryLineState(stockInvState, serverProvider, widget),
         builder: (context, AsyncSnapshot<dynamic> snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             final records = snapshot.data[0]['line_ids'];
@@ -141,30 +124,47 @@ class _StockInventoryLineListViewState
         child: Column(
       children: <Widget>[
         Container(
-          width: MediaQuery.of(context).size.width,
-          height: 30,
-          color: Colors.grey,
-          child: TextField(
-            textAlign: TextAlign.center,
-            controller: searchController,
-            keyboardType: TextInputType.number,
-            style: TextStyle(fontSize: 15, height: 1),
-            focusNode: myFocusNode,
-            autofocus: true,
-            onSubmitted: (e) async {
-              final sum = 0;
-              print({'sum', sum});
-              var changes = await setNewStockInventoryLine(
-                  e, stockInvState, serverProvider);
-              // print({'dataaaaaaaaaaaaaaaaaaaaaaa', data.getError()});
-              if (changes.hasError() == false) {
-                await getStockInventoryLineState();
-                serverProvider.update();
-              }
-            },
-            // onSubmitted: (e) {},
-          ),
-        ),
+            width: MediaQuery.of(context).size.width,
+            height: 30,
+            color: Colors.white,
+            child: Row(
+              children: <Widget>[
+                Column(
+                  children: <Widget>[
+                    Container(
+                      height: 30,
+                      width: MediaQuery.of(context).size.width - 88,
+                      child: TextField(
+                          textAlign: TextAlign.center,
+                          controller: searchController,
+                          keyboardType: TextInputType.number,
+                          style: TextStyle(fontSize: 15, height: 1),
+                          focusNode: myFocusNode,
+                          autofocus: true,
+                          onSubmitted: (e) {
+                            readBarcode(
+                                e, serverProvider, stockInvState, widget);
+                          }
+                          // onSubmitted: (e) {},
+                          ),
+                    ),
+                  ],
+                ),
+                MaterialButton(
+                  child: Icon(Icons.add),
+                  onPressed: () {
+                    FlutterBarcodeScanner.getBarcodeStreamReceiver(
+                            "#ff6666", "Cancelar", false, ScanMode.BARCODE)
+                        .listen((barcode) {
+                      readBarcode(
+                          barcode, serverProvider, stockInvState, widget);
+                    });
+                  },
+                  color: Colors.red,
+                  textColor: Colors.white,
+                )
+              ],
+            )),
         Flexible(
           child: futureBuilder,
         ),

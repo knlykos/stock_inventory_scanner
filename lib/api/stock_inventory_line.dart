@@ -2,12 +2,37 @@ import 'package:odoo_api/odoo_api_connector.dart';
 import 'package:stock_inventory_scanner/provider/server_provider.dart';
 import 'package:stock_inventory_scanner/provider/stock_inventory_line_state.dart';
 
+readBarcode(String e, ServerProvider serverProvider,
+    StockInventoryLineState stockInvState, dynamic widget) async {
+  final sum = 0;
+  print({'sum', sum});
+  var changes =
+      await setNewStockInventoryLine(e, stockInvState, serverProvider);
+  // print({'dataaaaaaaaaaaaaaaaaaaaaaa', data.getError()});
+  if (changes.hasError() == false) {
+    await getStockInventoryLineState(stockInvState, serverProvider, widget);
+    serverProvider.update();
+  }
+}
+
+Future<List<dynamic>> getStockInventoryLineState(
+    StockInventoryLineState stockInvState,
+    ServerProvider serverProvider,
+    dynamic widget) async {
+  final result = await getSetBarcodeViewState(
+      serverProvider: serverProvider, stockInventoryId: widget.inventoryId);
+  stockInvState.stockInventoryLineState = result;
+  final barcodes = await getAllBarcodes(serverProvider);
+  stockInvState.allProductsBarcodes = barcodes;
+  print({'barcodes', stockInvState.allProductsBarcodes});
+  return result;
+}
+
 // TODO: convertir en clase y hacer enumeraciones llamada method, y color create, update, delete de odoo;
 Future<OdooResponse> setNewStockInventoryLine(
     dynamic e,
     StockInventoryLineState stockInvState,
     ServerProvider serverProvider) async {
-  print({'e', e});
   dynamic product;
   final barcodes = stockInvState.allProductsBarcodes;
   final state = stockInvState.stockInventoryLineState;
@@ -73,9 +98,9 @@ Future<OdooResponse> setNewStockInventoryLine(
         } catch (e) {
           print('El valor es null');
         }
-        response = serverProvider.client
-            .callKW(model, method, [args], kwargs: kargsParams);
       });
+      response = serverProvider.client
+          .callKW(model, method, [args], kwargs: kargsParams);
       break;
     case 'write':
       args = [

@@ -28,6 +28,7 @@ dependencies:
   odoo_api: ^1.0.4
   intl: ^0.16.0
   flutter_typeahead: ^1.7.0
+  flutter_barcode_scanner: ^0.1.7
 
 dev_dependencies:
   flutter_test:
