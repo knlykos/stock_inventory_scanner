@@ -4,8 +4,6 @@ import 'package:stock_inventory_scanner/provider/stock_inventory_line_state.dart
 
 readBarcode(String e, ServerProvider serverProvider,
     StockInventoryLineState stockInvState, dynamic widget) async {
-  final sum = 0;
-  print({'sum', sum});
   var changes =
       await setNewStockInventoryLine(e, stockInvState, serverProvider);
   // print({'dataaaaaaaaaaaaaaaaaaaaaaa', data.getError()});
@@ -30,7 +28,7 @@ Future<List<dynamic>> getStockInventoryLineState(
 
 // TODO: convertir en clase y hacer enumeraciones llamada method, y color create, update, delete de odoo;
 Future<OdooResponse> setNewStockInventoryLine(
-    dynamic e,
+    String e,
     StockInventoryLineState stockInvState,
     ServerProvider serverProvider) async {
   dynamic product;
@@ -40,6 +38,7 @@ Future<OdooResponse> setNewStockInventoryLine(
   final locationStockId = state[0]['location_ids'][0];
   final model = 'stock.inventory.line';
   final sessionData = serverProvider.authValues;
+
   var productExistInList = false;
   String method;
   int locationId;
@@ -48,13 +47,39 @@ Future<OdooResponse> setNewStockInventoryLine(
   dynamic args;
   dynamic kargsParams;
   Future<OdooResponse> response;
+  bool hasPattern;
+  bool hasError;
+
+  // verifica si el codigo de barras esta formateado, para actualizar la cantidad indicada
+  // el formado debe de ir formado por 3 puntos para indicar que se esta agregando el modificador.
+
+  var barcode = e.split('...');
+
+  if (barcode.length == 2) {
+    if (barcode[0].length > 0) {
+      if (barcode[1].length > 0) {
+        // TODO: Crear una validacion y mostrar en el frontend un mensaje de error si fuera el caso.
+        hasPattern = true;
+      }
+    }
+    // busca si el producto se encuentra disponible en el estado
+    // si se encuentra actualiza, sino crea uno nuevo en el servidor.
+    // establece la variable con el nombre del metodo que se va a usar.
+    e = barcode[0];
+  } else {
+    hasPattern = false;
+  }
   if (state[0]['line_ids'].length != 0) {
     for (var item in state[0]['line_ids']) {
       if (item['product_id']['barcode'] == e) {
         productExistInList = true;
         method = 'write';
         lineId = item["id"];
-        qty = item['product_qty'] + 1;
+        if (hasPattern) {
+          qty = double.parse(barcode[1]);
+        } else {
+          qty = item['product_qty'] + 1;
+        }
       }
       if (productExistInList != true) {
         method = 'create';
@@ -67,6 +92,7 @@ Future<OdooResponse> setNewStockInventoryLine(
     qty = 1;
     locationId = state[0]['location_ids'][0];
   }
+
   kargsParams = {
     'context': {
       'lang': 'es_ES',
@@ -250,7 +276,8 @@ getBarcodeNomenclatures(ServerProvider serverProvider) async {
   return response;
 }
 
-nameSearch(e, context1) async {
+Future<OdooResponse> nameSearch(
+    e, context, ServerProvider serverProvider) async {
   const model = 'product.product';
   const method = 'name_search';
   final args = [];
@@ -273,21 +300,90 @@ nameSearch(e, context1) async {
     }
   };
   // TODO: Descomentar para llamar a la api
-  // var data = await serverProvider.client
-  //     .callKW(model, method, args, kwargs: kwargs);
-  // print({'data', data.getResult()});
+  var data =
+      await serverProvider.client.callKW(model, method, args, kwargs: kwargs);
+  return data;
 }
 
-// "context": {
-//               "lang": "es_ES",
-//               "tz": false,
-//               "uid": 2,
-//               "allowed_company_ids": [
-//                   1
-//               ],
-//               "default_company_id": 1,
-//               "default_inventory_id": 23,
-//               "default_location_id": 8,
-//               "default_product_qty": 1,
-//               "form_view_ref": "stock_barcode.stock_inventory_line_barcode"
-//           }
+onChangeStockInventoryLine(
+    dynamic product, ServerProvider serverProvider) async {
+  print(product);
+  const model = 'stock.inventory.line';
+  const method = 'onchange';
+  final args = [
+    [],
+    {
+      "product_qty": product['product_qty'],
+      "company_id": 1,
+      "location_id": product['location_id'][0],
+      "product_tracking": product['product_id']['tracking'],
+      "state": false,
+      "product_id": product['product_id']['id'],
+      "prod_lot_id": false,
+      "theoretical_qty": product['theoretical_qty'],
+      "product_uom_id": false,
+      "package_id": false
+    },
+    [
+      "product_tracking",
+      "state",
+      "product_id",
+      "prod_lot_id",
+      "theoretical_qty",
+      "product_qty",
+      "company_id",
+      "product_uom_id",
+      "location_id",
+      "package_id"
+    ],
+    {
+      "product_tracking": "",
+      "state": "",
+      "product_id": "1",
+      "prod_lot_id": "1",
+      "theoretical_qty": "",
+      "product_qty": "",
+      "company_id": "",
+      "product_uom_id": "1",
+      "location_id": "1",
+      "package_id": "1"
+    }
+  ];
+  final kwargs = {
+    "name": '',
+    "operator": "ilike",
+    "limit": 8,
+    "context": {
+      "lang": "es_ES",
+      "tz": false,
+      "uid": 2,
+      "allowed_company_ids": [1]
+    }
+  };
+  // TODO: Descomentar para llamar a la api
+  var data =
+      await serverProvider.client.callKW(model, method, args, kwargs: kwargs);
+  return data;
+}
+
+Future<OdooResponse> readProduct(
+    int productId, ServerProvider serverProvider) async {
+  List<dynamic> stockInventory;
+  final lineIdsRes =
+      await serverProvider.client.searchRead('stock.inventory.line', [
+    ['id', 'in', productId]
+  ], [
+    "product_tracking",
+    "state",
+    "product_id",
+    "prod_lot_id",
+    "theoretical_qty",
+    "product_qty",
+    "company_id",
+    "product_uom_id",
+    "location_id",
+    "package_id",
+    "display_name"
+  ]);
+  return lineIdsRes;
+}

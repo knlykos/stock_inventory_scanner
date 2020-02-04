@@ -8,6 +8,7 @@ import 'package:stock_inventory_scanner/api/stock_inventory_line.dart';
 import 'package:stock_inventory_scanner/provider/server_provider.dart';
 import 'package:stock_inventory_scanner/provider/stock_inventory_line_state.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:stock_inventory_scanner/screens/add_product_screen.dart';
 
 class StockInventoryLineScreen extends StatelessWidget {
   int stockInventoryId;
@@ -153,11 +154,14 @@ class _StockInventoryLineListViewState
                 MaterialButton(
                   child: Icon(Icons.add),
                   onPressed: () {
-                    FlutterBarcodeScanner.getBarcodeStreamReceiver(
-                            "#ff6666", "Cancelar", false, ScanMode.BARCODE)
-                        .listen((barcode) {
-                      readBarcode(
-                          barcode, serverProvider, stockInvState, widget);
+                    // TODO: agregar una configuracion para pasar el dato al input o pasar el valor directo. en caso de formulas.
+                    FlutterBarcodeScanner.scanBarcode(
+                            "#ff6666", "Cancelar", true, ScanMode.DEFAULT)
+                        .then((barcode) {
+                      // readBarcode(
+                      //     barcode, serverProvider, stockInvState, widget);
+                      this.searchController.text = barcode;
+                      this.myFocusNode.requestFocus();
                     });
                   },
                   color: Colors.red,
@@ -173,8 +177,12 @@ class _StockInventoryLineListViewState
               Size(MediaQuery.of(context).size.width, 60),
             ),
             onPressed: () {
-//                  Navigator.push(context,
-//                      MaterialPageRoute(builder: (context) => AddProductScreen()));
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => AddProductScreen(
+                            inventoryId: widget.inventoryId,
+                          )));
             },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,

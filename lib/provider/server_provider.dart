@@ -12,6 +12,7 @@ class ServerProvider with ChangeNotifier {
   bool _debug = true;
   OdooClient _client;
   OdooUser authValues;
+  dynamic state;
 
   getInstance({String user, String password, String database, String host}) {
     print({user, password, database, host});
