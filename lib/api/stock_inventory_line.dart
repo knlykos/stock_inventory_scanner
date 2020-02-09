@@ -1,4 +1,5 @@
 import 'package:odoo_api/odoo_api_connector.dart';
+import 'package:stock_inventory_scanner/provider/models/response.dart';
 import 'package:stock_inventory_scanner/provider/server_provider.dart';
 import 'package:stock_inventory_scanner/provider/stock_inventory_line_state.dart';
 
@@ -324,18 +325,7 @@ onChangeStockInventoryLine(
       "product_uom_id": false,
       "package_id": false
     },
-    [
-      "product_tracking",
-      "state",
-      "product_id",
-      "prod_lot_id",
-      "theoretical_qty",
-      "product_qty",
-      "company_id",
-      "product_uom_id",
-      "location_id",
-      "package_id"
-    ],
+    "product_id",
     {
       "product_tracking": "",
       "state": "",
@@ -350,14 +340,16 @@ onChangeStockInventoryLine(
     }
   ];
   final kwargs = {
-    "name": '',
-    "operator": "ilike",
-    "limit": 8,
     "context": {
-      "lang": "es_ES",
+      "lang": "en_US",
       "tz": false,
       "uid": 2,
-      "allowed_company_ids": [1]
+      "allowed_company_ids": [1],
+      "default_company_id": 1,
+      "default_inventory_id": 1,
+      "default_location_id": 8,
+      "default_product_qty": 1,
+      "form_view_ref": "stock_barcode.stock_inventory_line_barcode"
     }
   };
   // TODO: Descomentar para llamar a la api
@@ -386,4 +378,50 @@ Future<OdooResponse> readProduct(
     "display_name"
   ]);
   return lineIdsRes;
+}
+
+Future<ResponseApi> createProduct(
+    dynamic odooRequest, ServerProvider serverProvider) async {
+  ResponseApi response = new ResponseApi();
+  // Recibe este map
+  // {
+  //   "product_qty": 2,
+  //   "location_id": 8,
+  //   "product_id": 8,
+  //   "product_lot_id": false,
+  //   "package_id": false
+  // }
+  OdooResponse odooResponse =
+      await serverProvider.client.create('stock.inventory.line', odooRequest);
+
+  if (odooResponse.hasError() == false) {
+    response.code = odooResponse.getStatusCode();
+    response.message = 'ok';
+    response.data = odooResponse.getResult();
+  } else {
+    response.code = odooResponse.getStatusCode();
+    response.message = odooResponse.getErrorMessage();
+    response.data = [];
+  }
+
+  return response;
+}
+
+Future<ResponseApi> stockLocationNameGet(
+    int locationId, ServerProvider serverProvider) async {
+  ResponseApi response = new ResponseApi();
+  var data = await serverProvider.client.callKW('stock.location', 'name_get', [
+    [locationId]
+  ], kwargs: {});
+
+  if (data.hasError() == false) {
+    response.code = data.getStatusCode();
+    response.message = 'ok';
+    response.data = data.getResult();
+  } else {
+    response.code = data.getStatusCode();
+    response.message = data.getErrorMessage();
+    response.data = [];
+  }
+  return response;
 }

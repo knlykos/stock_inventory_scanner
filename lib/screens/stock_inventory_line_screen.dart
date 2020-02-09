@@ -177,11 +177,17 @@ class _StockInventoryLineListViewState
               Size(MediaQuery.of(context).size.width, 60),
             ),
             onPressed: () {
+              print({
+                'stockInvState',
+                stockInvState.stockInventoryLineState[0]['location_ids'][0]
+              });
               Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) => AddProductScreen(
                             inventoryId: widget.inventoryId,
+                            stockLocationId: stockInvState
+                                .stockInventoryLineState[0]['location_ids'][0],
                           )));
             },
             child: Row(
