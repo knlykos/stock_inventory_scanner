@@ -205,7 +205,7 @@ class _AddProductState extends State<AddProduct> {
                   };
 
                   print(productWrite);
-                  // createProduct(e, serverProvider);
+                  createProduct(productWrite, serverProvider);
                   // Navigator.push(
                   //     context,
                   //     MaterialPageRoute(
